@@ -8,6 +8,9 @@
   - [Persistence Class](#persistence-class)
   - [Class Variables](#class-variables)
   - [Class Methods](#class-methods)
+- [Contributing](#contributing)
+- [Security](#security)
+- [Contacts](#contacts)
 
 ## [About](#about)
 
