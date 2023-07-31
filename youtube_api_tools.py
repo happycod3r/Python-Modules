@@ -69,6 +69,8 @@ class YouTubeAPIClient:
         """
         self.youtube = youtube3.YoutubeClient("./client_secret_671382908634-hudnrlsnhr3gqresomjga29a33s0chml.apps.googleusercontent.com.json")
 
+    #//////////// AUTHENTICATION ////////////
+    
     def get_authenticated_service(self):
         """
             Sets up the OAuth 2.0 flow using the client_secret.json file. This method will 
@@ -80,6 +82,26 @@ class YouTubeAPIClient:
         credentials = flow.run_local_server(port=8080)
         return googleapiclient.discovery.build("youtube", "v3", credentials=credentials)
 
+    #//////////// PLAYLISTS ////////////
+    
+    def search_playlists(self, query, max_results=10):
+        service = self.get_authenticated_service()
+
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="playlist",
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+    
     def get_user_playlists(self):
         """
             This method uses the playlists().list method to retrieve the user's playlists. 
@@ -220,25 +242,9 @@ class YouTubeAPIClient:
             print(f"Playlist '{response['snippet']['title']}' updated.")
         except googleapiclient.errors.HttpError as e:
             print(f"An error occurred: {e}")
+
+    #//////////// VIDEOS ////////////
     
-    def search_videos(self, query, max_results=10):
-        service = self.get_authenticated_service()
-
-        try:
-            request = service.search().list(
-                part="snippet",
-                q=query,
-                type="video",
-                maxResults=max_results
-            )
-            response = request.execute()
-
-            for item in response["items"]:
-                print(item["snippet"]["title"])
-
-        except googleapiclient.errors.HttpError as e:
-            print(f"An error occurred: {e}")        
-
     def get_related_videos(self, video_id, max_results=10):
         service = self.get_authenticated_service()
 
@@ -257,7 +263,7 @@ class YouTubeAPIClient:
         except googleapiclient.errors.HttpError as e:
             print(f"An error occurred: {e}")
             
-    def get_video_details(self, video_id):
+    def get_all_video_details(self, video_id):
         service = self.get_authenticated_service()
 
         try:
@@ -269,28 +275,113 @@ class YouTubeAPIClient:
 
             video = response["items"][0]
             print(f"Title: {video['snippet']['title']}")
+            print(f"Channel: {video['snippet']['channelTitle']}")
+            print(f"Published At: {video['snippet']['publishedAt']}")
             print(f"Duration: {video['contentDetails']['duration']}")
             print(f"Views: {video['statistics']['viewCount']}")
+            print(f"Likes: {video['statistics']['likeCount']}")
+            print(f"Dislikes: {video['statistics']['dislikeCount']}")
         except googleapiclient.errors.HttpError as e:
             print(f"An error occurred: {e}")
 
-    def get_video_comments(self, video_id, max_results=10):
+    def get_video_title(self, video_id):
         service = self.get_authenticated_service()
-
         try:
-            request = service.commentThreads().list(
-                part="snippet",
-                videoId=video_id,
-                maxResults=max_results
+            request = service.videos().list(
+                part="snippet,contentDetails,statistics",
+                id=video_id
             )
             response = request.execute()
 
-            for item in response["items"]:
-                print(item["snippet"]["topLevelComment"]["snippet"]["textDisplay"])
-
+            video = response["items"][0]
+            return video['snippet']['title']
         except googleapiclient.errors.HttpError as e:
             print(f"An error occurred: {e}")
+            
+    def get_videos_channel_title(self, video_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.videos().list(
+                part="snippet,contentDetails,statistics",
+                id=video_id
+            )
+            response = request.execute()
 
+            video = response["items"][0]
+            return video['snippet']['channelTitle']
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+            
+    def get_video_published_at(self, video_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.videos().list(
+                part="snippet,contentDetails,statistics",
+                id=video_id
+            )
+            response = request.execute()
+
+            video = response["items"][0]
+            return video['snippet']['publishedAt']
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+            
+    def get_video_duration(self, video_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.videos().list(
+                part="snippet,contentDetails,statistics",
+                id=video_id
+            )
+            response = request.execute()
+
+            video = response["items"][0]
+            return video['contentDetails']['duration']
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+       
+    def get_video_view_count(self, video_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.videos().list(
+                part="snippet,contentDetails,statistics",
+                id=video_id
+            )
+            response = request.execute()
+
+            video = response["items"][0]
+            return video['statistics']['viewCount']
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+      
+    def get_video_like_count(self, video_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.videos().list(
+                part="snippet,contentDetails,statistics",
+                id=video_id
+            )
+            response = request.execute()
+
+            video = response["items"][0]
+            return video['statistics']['likeCount']
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+      
+    def get_video_dislike_count(self, video_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.videos().list(
+                part="snippet,contentDetails,statistics",
+                id=video_id
+            )
+            response = request.execute()
+
+            video = response["items"][0]
+            return video['statistics']['dislikeCount']
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+       
     def get_video_categories(self, region_code="US"):
         service = self.get_authenticated_service()
 
@@ -306,6 +397,259 @@ class YouTubeAPIClient:
 
         except googleapiclient.errors.HttpError as e:
             print(f"An error occurred: {e}")
+     
+    def get_videos_by_category(self, category_id, region_code="US", max_results=10):
+        service = self.get_authenticated_service()
+
+        try:
+            request = service.search().list(
+                part="snippet",
+                videoCategoryId=category_id,
+                regionCode=region_code,
+                type="video",
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+    
+    def get_trending_videos(self, region_code="US", max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.videos().list(
+                part="snippet",
+                chart="mostPopular",
+                regionCode=region_code,
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_videos_by_tag(self, tag, region_code="US", max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=tag,
+                regionCode=region_code,
+                type="video",
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+     
+    def get_videos_by_language(self, language_code, region_code="US", max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+                part="snippet",
+                regionCode=region_code,
+                relevanceLanguage=language_code,
+                type="video",
+                maxResults=max_results
+            )
+            response = request.execute()
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+     
+    def search_videos(self, query, max_results=10):
+        service = self.get_authenticated_service()
+
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="video",
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")        
+
+    def search_videos_by_order(self, query, order="relevance", max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="video",
+                order=order,
+                maxResults=max_results
+            )
+            response = request.execute()
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def search_videos_by_category(self, query, category_id, max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="video",
+                videoCategoryId=category_id,
+                maxResults=max_results
+            )
+            response = request.execute()
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def search_videos_by_definition(self, query, definition="any", max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="video",
+                videoDefinition=definition,
+                maxResults=max_results
+            )
+            response = request.execute()
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def search_videos_by_duration(self, query, duration="any", max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="video",
+                videoDuration=duration,
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")    
+
+    def search_videos_by_license(self, query, license_type="any", max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="video",
+                videoLicense=license_type,
+                maxResults=max_results
+            )
+            response = request.execute()
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+    
+    def search_videos_by_type(self, query, video_type="any", max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type=video_type,
+                maxResults=max_results
+            )
+            response = request.execute()
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def search_embeddable_videos(self, query, embeddable="true", max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="video",
+                videoEmbeddable=embeddable,
+                maxResults=max_results
+            )
+            response = request.execute()
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def search_videos_by_location(self, query, location, location_radius, max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="video",
+                location=location,
+                locationRadius=location_radius,
+                maxResults=max_results
+            )
+            response = request.execute()
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def search_videos_by_language(self, query, language_code, max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="video",
+                relevanceLanguage=language_code,
+                maxResults=max_results
+            )
+            response = request.execute()
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def search_videos_by_published_date(self, query, published_after, published_before, max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="video",
+                publishedAfter=published_after,
+                publishedBefore=published_before,
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+     
+    #//////////// CHANNELS ////////////
 
     def get_channel_info(self, channel_id):
         service = self.get_authenticated_service()
@@ -323,3 +667,547 @@ class YouTubeAPIClient:
             print(f"Video Count: {channel['statistics']['videoCount']}")
         except googleapiclient.errors.HttpError as e:
             print(f"An error occurred: {e}")
+
+    def get_channel_videos(self, channel_id, max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.search().list(
+            part="snippet",
+            channelId=channel_id,
+            type="video",
+            maxResults=max_results
+            )
+            response = request.execute()
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+    
+    def get_featured_channels(self, channel_id):
+        service = self.get_authenticated_service()
+
+        try:
+            request = service.channels().list(
+                part="snippet,brandingSettings",
+                id=channel_id
+            )
+            response = request.execute()
+
+            featured_channels = response["items"][0]["brandingSettings"]["channel"]["featuredChannelsUrls"]
+            for channel_url in featured_channels:
+                print(channel_url)
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_channel_sections(self, channel_id):
+        service = self.get_authenticated_service()
+
+        try:
+            request = service.channelSections().list(
+                part="snippet",
+                channelId=channel_id
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["title"] )
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_channel_subscribers(self, channel_id):
+        service = self.get_authenticated_service()
+
+        try:
+            request = service.channels().list(
+                part="statistics",
+                id=channel_id
+            )
+            response = request.execute()
+
+            subscriber_count = response["items"][0]["statistics"]["subscriberCount"]
+            print(f"Channel '{channel_id}' has {subscriber_count} subscribers.")
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_channel_activity(self, channel_id, max_results=10):
+        service = self.get_authenticated_service()
+
+        try:
+            request = service.activities().list(
+                part="snippet",
+                channelId=channel_id,
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for activity in response["items"]:
+                print(activity["snippet"]["title"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_channel_related_channels(self, channel_id, max_results=10):
+        service = self.get_authenticated_service()
+
+        try:
+            request = service.channels().list(
+                part="snippet",
+                relatedToChannelId=channel_id,
+                type="channel",
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+    
+    def search_channels(self, query, max_results=10):
+        service = self.get_authenticated_service()
+
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="channel",
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+    
+    #//////////// COMMENTS ////////////
+    
+    def get_video_comments(self, video_id, max_results=10):
+        service = self.get_authenticated_service()
+
+        try:
+            request = service.commentThreads().list(
+                part="snippet",
+                videoId=video_id,
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["topLevelComment"]["snippet"]["textDisplay"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_comment_replies(self, comment_id, max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.comments().list(
+                part="snippet",
+                parentId=comment_id,
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["textDisplay"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def post_video_comment(self, video_id, comment_text):
+        service = self.get_authenticated_service()
+        try:
+            request = service.commentThreads().insert(
+                part="snippet",
+                body={
+                    "snippet": {
+                        "videoId": video_id,
+                        "topLevelComment": {
+                            "snippet": {
+                                "textOriginal": comment_text
+                            }
+                        }
+                    }
+                }
+            )
+            response = request.execute()
+
+            print("Comment posted successfully!")
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")    
+
+    def reply_to_comment(self, parent_comment_id, reply_text):
+        service = self.get_authenticated_service()
+        try:
+            request = service.comments().insert(
+                part="snippet",
+                body={
+                    "snippet": {
+                        "parentId": parent_comment_id,
+                        "textOriginal": reply_text
+                    }
+                }
+            )
+            response = request.execute()
+
+            print("Reply posted successfully!")
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+            
+    def update_comment(self, comment_id, updated_text):
+        service = self.get_authenticated_service()
+        try:
+            request = service.comments().update(
+                part="snippet",
+                body={
+                    "id": comment_id,
+                    "snippet": {
+                        "textOriginal": updated_text
+                    }
+                }
+            )
+            response = request.execute()
+
+            print("Comment updated successfully!")
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+    
+    def delete_comment(self, comment_id):
+        service = self.get_authenticated_service()
+        try:
+            service.comments().delete(
+                id=comment_id
+            ).execute()
+
+            print("Comment deleted successfully!")
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+    
+    #//////////// LIVE BROADCASTS/STREAMING ///////////
+
+    def get_live_streams(self, max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveStreams().list(
+                part="snippet",
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for stream in response["items"]:
+                print(stream["snippet"]["title"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+    
+    def get_live_broadcasts(self, max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveBroadcasts().list(
+                part="snippet",
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for broadcast in response["items"]:
+                print(broadcast["snippet"]["title"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+    
+    def search_live_broadcasts(self, query, max_results=10):
+        service = self.get_authenticated_service()
+
+        try:
+            request = service.search().list(
+                part="snippet",
+                q=query,
+                type="video",
+                eventType="live",
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for item in response["items"]:
+                print(item["snippet"]["title"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+      
+    def get_live_chat_messages(self, live_chat_id, max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChatMessages().list(
+                liveChatId=live_chat_id,
+                part="snippet",
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for message in response["items"]:
+                print(message["snippet"]["displayMessage"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+     
+    def get_live_chat_moderators(self, live_chat_id, max_results=10):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChatModerators().list(
+                liveChatId=live_chat_id,
+                part="snippet",
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for moderator in response["items"]:
+                print(moderator["snippet"]["moderatorDetails"]["displayName"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+     
+    def get_live_chat_bans(self, live_chat_id, max_results=10):
+        service = self.get_authenticated_service()
+
+        try:
+            request = service.liveChatBans().list(
+                liveChatId=live_chat_id,
+                part="snippet",
+                maxResults=max_results
+            )
+            response = request.execute()
+
+            for ban in response["items"]:
+                print(ban["snippet"]["bannedUserDetails"]["displayName"])
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def insert_live_chat_message(self, live_chat_id, message_text):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChatMessages().insert(
+                part="snippet",
+                body={
+                    "snippet": {
+                        "liveChatId": live_chat_id,
+                        "type": "textMessageEvent",
+                        "textMessageDetails": {
+                            "messageText": message_text
+                        }
+                    }
+                }
+            )
+            response = request.execute()
+
+            print("Live chat message sent successfully!")
+
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_all_live_chat_details(self, live_chat_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChat().list(
+                id=live_chat_id,
+                part="snippet,id,status,snippet.type,status.activeLiveChatId,status.actualStartTime,status.scheduledStartTime,status.concurrentViewers,status.activeParticipants,snippet.liveChatId,snippet.liveChatType,snippet.title,snippet.description,snippet.isModerated,snippet.scheduledStartTime,snippet.actualStartTime"
+            )
+            response = request.execute()
+            chat = response["items"][0]["snippet"]
+            status = response["items"][0]["status"]
+            _details = (
+                chat['liveChatId'], 
+                chat['liveChatType'], 
+                chat['title'], 
+                chat['description'],
+                chat['isModerated'], 
+                chat['scheduledStartTime'], 
+                status['actualStartTime'],
+                status['lifeCycleStatus'], 
+                status['activeLiveChatId'], 
+                status['concurrentViewers'],
+                status['activeParticipants']
+            )
+            return _details
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+            
+    def get_live_chat_id(self, live_chat_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChat().list(
+                id=live_chat_id,
+                part="snippet,id,status,snippet.type,status.activeLiveChatId,status.actualStartTime,status.scheduledStartTime,status.concurrentViewers,status.activeParticipants,snippet.liveChatId,snippet.liveChatType,snippet.title,snippet.description,snippet.isModerated,snippet.scheduledStartTime,snippet.actualStartTime"
+            )
+            response = request.execute()
+            chat = response["items"][0]["snippet"]
+            status = response["items"][0]["status"]
+            _id = chat['liveChatId']
+            return _id
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_live_chat_type(self, live_chat_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChat().list(
+                id=live_chat_id,
+                part="snippet,id,status,snippet.type,status.activeLiveChatId,status.actualStartTime,status.scheduledStartTime,status.concurrentViewers,status.activeParticipants,snippet.liveChatId,snippet.liveChatType,snippet.title,snippet.description,snippet.isModerated,snippet.scheduledStartTime,snippet.actualStartTime"
+            )
+            response = request.execute()
+            chat = response["items"][0]["snippet"]
+            status = response["items"][0]["status"]
+            _type = chat['liveChatType']
+            return _type
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_live_chat_title(self, live_chat_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChat().list(
+                id=live_chat_id,
+                part="snippet,id,status,snippet.type,status.activeLiveChatId,status.actualStartTime,status.scheduledStartTime,status.concurrentViewers,status.activeParticipants,snippet.liveChatId,snippet.liveChatType,snippet.title,snippet.description,snippet.isModerated,snippet.scheduledStartTime,snippet.actualStartTime"
+            )
+            response = request.execute()
+            chat = response["items"][0]["snippet"]
+            status = response["items"][0]["status"]
+            _title = chat['title']
+            return _title
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_live_chat_description(self, live_chat_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChat().list(
+                id=live_chat_id,
+                part="snippet,id,status,snippet.type,status.activeLiveChatId,status.actualStartTime,status.scheduledStartTime,status.concurrentViewers,status.activeParticipants,snippet.liveChatId,snippet.liveChatType,snippet.title,snippet.description,snippet.isModerated,snippet.scheduledStartTime,snippet.actualStartTime"
+            )
+            response = request.execute()
+            chat = response["items"][0]["snippet"]
+            status = response["items"][0]["status"]
+            _description = chat['description']
+            return _description
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def is_live_chat_moderated(self, live_chat_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChat().list(
+                id=live_chat_id,
+                part="snippet,id,status,snippet.type,status.activeLiveChatId,status.actualStartTime,status.scheduledStartTime,status.concurrentViewers,status.activeParticipants,snippet.liveChatId,snippet.liveChatType,snippet.title,snippet.description,snippet.isModerated,snippet.scheduledStartTime,snippet.actualStartTime"
+            )
+            response = request.execute()
+            chat = response["items"][0]["snippet"]
+            status = response["items"][0]["status"]
+            _is_moderated = chat['isModerated']
+            return _is_moderated
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+    
+    def get_live_chat_scheduled_start_time(self, live_chat_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChat().list(
+                id=live_chat_id,
+                part="snippet,id,status,snippet.type,status.activeLiveChatId,status.actualStartTime,status.scheduledStartTime,status.concurrentViewers,status.activeParticipants,snippet.liveChatId,snippet.liveChatType,snippet.title,snippet.description,snippet.isModerated,snippet.scheduledStartTime,snippet.actualStartTime"
+            )
+            response = request.execute()
+            chat = response["items"][0]["snippet"]
+            status = response["items"][0]["status"]
+            _description = chat['scheduledStartTime']
+            return _description
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_live_chat_actual_start_time(self, live_chat_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChat().list(
+                id=live_chat_id,
+                part="snippet,id,status,snippet.type,status.activeLiveChatId,status.actualStartTime,status.scheduledStartTime,status.concurrentViewers,status.activeParticipants,snippet.liveChatId,snippet.liveChatType,snippet.title,snippet.description,snippet.isModerated,snippet.scheduledStartTime,snippet.actualStartTime"
+            )
+            response = request.execute()
+            chat = response["items"][0]["snippet"]
+            status = response["items"][0]["status"]
+            _actual_start_time = status['actualStartTime']
+            return _actual_start_time
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_live_chat_life_cycle_status(self, live_chat_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChat().list(
+                id=live_chat_id,
+                part="snippet,id,status,snippet.type,status.activeLiveChatId,status.actualStartTime,status.scheduledStartTime,status.concurrentViewers,status.activeParticipants,snippet.liveChatId,snippet.liveChatType,snippet.title,snippet.description,snippet.isModerated,snippet.scheduledStartTime,snippet.actualStartTime"
+            )
+            response = request.execute()
+            chat = response["items"][0]["snippet"]
+            status = response["items"][0]["status"]
+            _life_cycle_status = status['lifeCycleStatus']
+            return _life_cycle_status
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_active_live_chat_id(self, live_chat_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChat().list(
+                id=live_chat_id,
+                part="snippet,id,status,snippet.type,status.activeLiveChatId,status.actualStartTime,status.scheduledStartTime,status.concurrentViewers,status.activeParticipants,snippet.liveChatId,snippet.liveChatType,snippet.title,snippet.description,snippet.isModerated,snippet.scheduledStartTime,snippet.actualStartTime"
+            )
+            response = request.execute()
+            chat = response["items"][0]["snippet"]
+            status = response["items"][0]["status"]
+            _active_chat_id = status['activeLiveChatId']
+            return _active_chat_id
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+    
+    def get_live_chat_concurrent_viewers(self, live_chat_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChat().list(
+                id=live_chat_id,
+                part="snippet,id,status,snippet.type,status.activeLiveChatId,status.actualStartTime,status.scheduledStartTime,status.concurrentViewers,status.activeParticipants,snippet.liveChatId,snippet.liveChatType,snippet.title,snippet.description,snippet.isModerated,snippet.scheduledStartTime,snippet.actualStartTime"
+            )
+            response = request.execute()
+            chat = response["items"][0]["snippet"]
+            status = response["items"][0]["status"]
+            _concurrent_viewers = status['concurrentViewers']
+            return _concurrent_viewers
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    def get_live_chat_active_participants(self, live_chat_id):
+        service = self.get_authenticated_service()
+        try:
+            request = service.liveChat().list(
+                id=live_chat_id,
+                part="snippet,id,status,snippet.type,status.activeLiveChatId,status.actualStartTime,status.scheduledStartTime,status.concurrentViewers,status.activeParticipants,snippet.liveChatId,snippet.liveChatType,snippet.title,snippet.description,snippet.isModerated,snippet.scheduledStartTime,snippet.actualStartTime"
+            )
+            response = request.execute()
+            chat = response["items"][0]["snippet"]
+            status = response["items"][0]["status"]
+            _active_participants = status['activeParticipants']
+            return _active_participants
+        except googleapiclient.errors.HttpError as e:
+            print(f"An error occurred: {e}")
+
+    
+    
+    
+    
