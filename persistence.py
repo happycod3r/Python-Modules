@@ -6,16 +6,105 @@ class Persistence():
     """
         The Persistence class is a wrapper around the configparser module and 
         provides methods for easily handling a configuartion file for persistent
-        settings.
+        settings. 
     """
-    def __init__(self) -> None:
+    def __init__(self, _config_dir_name: str = None, _config_file_path: str = None) -> None:
         
         self.CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
-        self.CONFIG_DIR = os.path.join(self.CURRENT_PATH, "config")
-        self.CONFIG_FILE = os.path.join(self.CONFIG_DIR, ".key.conf")
+        self.CONFIG_DIR = os.path.join(self.CURRENT_PATH, f"{_config_dir_name}")
+        self.CONFIG_FILE = os.path.join(self.CONFIG_DIR, f"{_config_file_path}")
         self.config = configparser.ConfigParser()
         
-    def openConfig(self) -> bool:
+    #//////////// CONFIG DIRECTORY METHODS ////////////
+    
+    def create_config_dir(self) -> bool:
+        """
+        Creates the config directory passed as the first argument of the constructor.
+        Returns True if successful otherwise False. Also returns False if it already 
+        exists.
+        """
+        if not os.path.exists(self.CONFIG_DIR):
+            try:
+                os.mkdir(self.CONFIG_DIR)
+                return True
+            except FileNotFoundError:
+                print("FileNotFoundError: File not found error")
+                return False
+            except IOError:
+                print("IOError: Could not create directory.")
+            except Exception as e:
+                print(repr(e))
+                return False
+        return False    
+        
+    def delete_config_dir(self) -> bool:
+        """
+        Deletes the configuration directory passed as the first argument to the 
+        constructor. Returns True if successful otherwise False. Also returns
+        False if the configuration directory isn't there.
+        """
+        if os.path.exists(self.CONFIG_DIR):
+            try:
+                os.rmdir(self.CONFIG_DIR)
+                return True
+            except FileNotFoundError:
+                print(f"{self.delete_config_dir.__name__}: Config dir not found")
+                return False
+            except IOError:
+                print(f"{self.delete_config_dir.__name__}: IOError")
+                return False
+            except Exception as e:
+                print(f"{self.delete_config_dir.__name__}\n{repr(e)}")
+                return False 
+        return False
+        
+    def get_config_dir_path(self) -> (str | bool):
+        """
+        Returns the absolute path to the config directory. Returns True if successful
+        and returns False if the config doesn't exist.
+        """
+        if os.path.exists(self.CONFIG_DIR):
+            return self.CONFIG_DIR
+        return False
+        
+    #//////////// CONFIG FILE METHODS ////////////
+        
+    def create_config_file(self) -> bool:
+        """
+        Creates the config file passed as the second argument of the constructor
+        at the path specfied in the first argument of the constructor.
+        """
+        if not os.path.exists(self.CONFIG_FILE):
+            try:
+                with open(self.CONFIG_FILE, 'w') as file:
+                    file.close()
+                    return True
+            except FileNotFoundError:
+                print(f"File '{self.CONFIG_FILE}' already exists!")
+                return False
+            except IOError:
+                return False
+            except Exception as e:
+                print(repr(e))
+                return False    
+    
+    def delete_config_file(self):
+        """
+        Deletes the config file specified as the second argument to the
+        constructor. Return True if successful and False otherwise.
+        """
+        if os.path.exists(self.CONFIG_FILE):
+            try:
+                os.remove(self.CONFIG_FILE)
+                return True
+            except FileNotFoundError:
+                print(f"File '{self.CONFIG_FILE}' not found.")
+                return False
+            except Exception as e:
+                print(f"An error occurred while trying to delete the file: {repr(e)}")
+        return False
+        
+    def open_config(self) -> bool:
         """
             Loads the config file to allow read/write operations.   
         """
@@ -23,74 +112,164 @@ class Persistence():
             self.config.read(f"{self.CONFIG_FILE}")
             return True
         except FileNotFoundError:
-            print(f"{self.openConfig.__name__}()\nFileNotFoundError: {self.CONFIG_FILE} not found! Can't open configuration")
+            print(f"{self.open_config.__name__}()\nFileNotFoundError: {self.CONFIG_FILE} not found! Can't open configuration")
             return False
         except IOError:
-            print(f"{self.openConfig.__name__}()\nIOError: Error while opening configuration.")
+            print(f"{self.open_config.__name__}()\nIOError: Error while opening configuration.")
             return False
         except Exception as e:
-            print(f"{self.openConfig.__name__}()\nException: Error while opening configuration.\n{repr(e)}")
+            print(f"{self.open_config.__name__}()\n{repr(e)}")
             return False
 
-    def getOption(self, _section: str, _option: str) -> (str | bool):
+    def save_config(self) -> bool:
+        """
+            Save the configuration after operations.
+        """
+        try:
+            with open(self.CONFIG_FILE, "w") as config_file:
+                self.config.write(config_file)
+                return True
+        except FileNotFoundError:
+            print(f"{self.save_config.__name__}()\nFileNotFoundError: {self.CONFIG_FILE} not found! Can't save configuration")
+            return False
+        except IOError:
+            print(f"{self.save_config.__name__}()\nIOError: Error while saving configuration.")
+            return False
+        except Exception as e:
+            print(f"{self.save_config.__name__}()\n{repr(e)}")
+            return False
+
+    def update_config(self, _parser: configparser.ConfigParser) -> bool:
+        """
+            Merge another config file with this one.
+        """
+        try:
+            self.config.update(_parser)
+            return True
+        except FileNotFoundError:
+            print(f"{self.update_config.__name__}()\nFileNotFoundError: File/s not found! Can't update configuration")
+            return False
+        except IOError:
+            print(f"{self.update_config.__name__}()\nIOError: Error while updating configuration.")
+            return False
+        except Exception as e:
+            print(f"{self.update_config.__name__}()\n{repr(e)}")
+            return False
+        
+    def reset_config(self):
+        """
+            Reset all configuration sections and options. This won't delete the configuration
+            file itself, but rather only reset the settings. If you have defaults set they
+            will go back to those.
+        """
+        try:
+            self.config.clear()
+            return True
+        except Exception as e:
+            print(f"{self.reset_config.__name__}\n{repr(e)}")
+            return False
+
+    def read_config(self) -> (str | bool):
+        if os.path.exists(self.CONFIG_FILE):
+            try:
+                with open(self.CONFIG_FILE, 'r') as file:
+                    contents = file.read()
+                    if len(contents) != 0:
+                        return contents
+                    else: 
+                        print(f"File: '{self.CONFIG_FILE}' is exists but is empty")
+            except FileNotFoundError:
+                print(f"File '{self.CONFIG_FILE}' not found.")
+                return False
+            except IOError:
+                print(f"Error reading file '{self.CONFIG_FILE}'.")
+                return False
+            except Exception as e:
+                print(repr(e))
+                return False
+        return False
+    
+    def dump_config_to_output(self) -> bool:
+        if os.path.exists(self.CONFIG_FILE):
+            try:
+                with open(self.CONFIG_FILE, 'r') as file:
+                    contents = file.read()
+                    if len(contents) != 0:
+                        print(contents)
+                        return True
+                    else: 
+                        print(f"File: '{self.CONFIG_FILE}' is exists but is empty")
+                        return False
+            except FileNotFoundError:
+                print(f"File '{self.CONFIG_FILE}' not found.")
+                return False
+            except IOError:
+                print(f"Error reading file '{self.CONFIG_FILE}'.")
+                return False
+            except Exception as e:
+                print(repr(e))
+                return False
+        return False
+    
+    #//////////// OPTION METHODS ////////////
+    
+    def get_option(self, _section: str, _option: str) -> (str | bool):
         """
             Get the value of a given option.        
         """
         try:
             _value = self.config.get(f"{_section}", f"{_option}")
             return _value
-        except:
-            print(f"{self.getOption.__name__}()\nError getting option: {_option}")
+        except Exception as e:
+            print(f"{self.get_option.__name__}()\n{repr(e)}")
+            return False
+    
+    def get_options(self, _section: str) -> (list | bool):
+        """
+        Returns a list of all options.
+        """
+        try:
+            return self.config.options(f"{_section}")
+        except Exception as e:
+            print(f"{self.get_sections.__name__}()\n{repr(e)}")
             return False
             
-    def setOption(self, _section: str, _option: str, _new_value: str) -> bool:
+    def set_option(self, _section: str, _option: str, _new_value: str) -> bool:
         """
             Set the value of a given option.
         """
         try:
             self.config.set(f"{_section}", f"{_option}", f"{_new_value}")
             return True
-        except:
-            print(f"{self.setOption.__name__}()\nError setting option: {_option}")
+        except Exception as e:
+            print(f"{self.set_option.__name__}()\n{repr(e)}")
             return False
             
-    def addOption(self, _section: str, _new_option: str, _value: str) -> bool:
+    def add_option(self, _section: str, _new_option: str, _value: str) -> bool:
         """
             Create a new config option.
         """
         try:
-            if not self.optionExists(f"{_section}", f"{_new_option}"):
+            if not self.option_exists(f"{_section}", f"{_new_option}"):
                 self.config.set(f"{_section}", f"{_new_option}", f"{_value}")
                 return True
             return False
-        except:
-            print(f"{self.addOption.__name__}()\nError adding option: {_new_option}")
+        except Exception as e:
+            print(f"{self.add_option.__name__}()\n{repr(e)}")
             return False
 
-    def removeOption(self, _section: str, _option: str) -> bool:
+    def remove_option(self, _section: str, _option: str) -> bool:
         """
             Remove a configuration option.
         """
         try:
             self.config.remove_option(f"{_section}", f"{_option}")
             return True
-        except:
-            print(f"{self.removeOption.__name__}()\nError removing option: {_option}")
+        except Exception as e:
+            print(f"{self.remove_option.__name__}()\n{repr(e)}")
             return False
         
-    def sectionExists(self, _section: str) -> bool:
-        """
-            Check if a configuration section exists.
-        """
-        try:
-            if self.config.has_section(f"{_section}"):
-                return True
-            return False
-        except:
-            print(f"{self.sectionExists.__name__}()\nError checking section [{_section}] existence option")
-            return False
-        
-    def optionExists(self, _section: str, _option: str) -> bool:
+    def option_exists(self, _section: str, _option: str) -> bool:
         """
             Check if a configuration option exists.
         """
@@ -102,24 +281,38 @@ class Persistence():
                     return False
             else:
                 return False
-        except:
-            print(f"{self.optionExists.__name__}()\nError checking if option: [{_option}] exists")
+        except Exception as e:
+            print(f"{self.option_exists.__name__}()\n{repr(e)}")
             return False
         
-    def addSection(self, _section: str) -> bool:
+    #//////////// SECTION METHODS ////////////
+    
+    def section_exists(self, _section: str) -> bool:
+        """
+            Check if a configuration section exists.
+        """
+        try:
+            if self.config.has_section(f"{_section}"):
+                return True
+            return False
+        except Exception as e:
+            print(f"{self.section_exists.__name__}()\n{repr(e)}")
+            return False
+          
+    def add_section(self, _section: str) -> bool:   
         """
             Add a new configuration section.
         """
         try:
-            if not self.sectionExists((f"{_section}")):
+            if not self.section_exists((f"{_section}")):
                 self.config.add_section(f"{_section}")
                 return True
             return False
-        except:
-            print(f"{self.addSection.__name__}()\nError adding section: {_section}")
+        except Exception as e:
+            print(f"{self.add_section.__name__}()\n{repr(e)}")
             return False
 
-    def removeSection(self, _section: str) -> bool:
+    def remove_section(self, _section: str) -> bool:
         """
             Remove a configuration section.
         """
@@ -130,11 +323,23 @@ class Persistence():
             else:
                 print(f"Section '{_section}' doesn't exist.")
                 return False
-        except:
-            print(f"{self.removeSection.__name__}()\nError removing section: {_section}")
+        except Exception as e:
+            print(f"{self.remove_section.__name__}()\n{repr(e)}")
             return False    
 
-    def setDefaultSection(self, _section: str) -> bool:
+    def get_sections(self) -> (list | bool):
+        """
+        Returns a list of all sections.
+        """
+        try:
+            return self.config.sections()
+        except Exception as e:
+            print(f"{self.get_sections.__name__}()\n{repr(e)}")
+            return False
+        
+    #//////////// DEFAULT SECTION/OPTION METHODS ////////////
+    
+    def set_default_section(self, _section: str) -> bool:
         """
             Set the name of the defaults section.
         """
@@ -143,11 +348,11 @@ class Persistence():
                 self.config.default_section = _section
                 return True
             return False
-        except:
-            print(f"{self.setDefaultSection.__name__}()\nError setting default section: {_section}")
+        except Exception as e:
+            print(f"{self.set_default_section.__name__}()\n{repr(e)}")
             return False
           
-    def getDefaultOptionValues(self) -> (dict | bool):
+    def get_default_option_values(self) -> (dict | bool):
         """
             Retrieve a dictionary containing the default values from the parser.
             The dictionary represents the options and their corresponding default 
@@ -155,56 +360,7 @@ class Persistence():
         """
         try:
             return self.config.defaults()
-        except:
-            print(f"{self.getDefaultOptionValues.__name__}()\nError getting default option values.")
+        except Exception as e:
+            print(f"{self.get_default_option_values.__name__}()\n{repr(e)}")
             return False
         
-    def saveConfig(self) -> bool:
-        """
-            Save the configuration after operations.
-        """
-        try:
-            with open(self.CONFIG_FILE, "w") as config_file:
-                self.config.write(config_file)
-                return True
-        except FileNotFoundError:
-            print(f"{self.saveConfig.__name__}()\nFileNotFoundError: {self.CONFIG_FILE} not found! Can't save configuration")
-            return False
-        except IOError:
-            print(f"{self.saveConfig.__name__}()\nIOError: Error while saving configuration.")
-            return False
-        except Exception as e:
-            print(f"{self.saveConfig.__name__}()\nException: Error while saving configuration.\n{repr(e)}")
-            return False
-
-    def updateConfig(self, _parser: configparser.ConfigParser) -> bool:
-        """
-            Merge another config file with this one.
-        """
-        try:
-            self.config.update(_parser)
-            return True
-        except FileNotFoundError:
-            print(f"{self.updateConfig.__name__}()\nFileNotFoundError: File/s not found! Can't update configuration")
-            return False
-        except IOError:
-            print(f"{self.updateConfig.__name__}()\nIOError: Error while updating configuration.")
-            return False
-        except Exception as e:
-            print(f"{self.updateConfig.__name__}()\nException: Error while updating configuration.\n{repr(e)}")
-            return False
-        
-    def resetConfig(self):
-        """
-            Reset all configuration sections and options. This won't delete the configuration
-            file itself, but rather only reset the settings. If you have defaults set they
-            will go back to those.
-        """
-        try:
-            self.config.clear()
-            return True
-        except:
-            print(f"Error resetting configuration!")
-            return False
-    
-
